@@ -1,7 +1,7 @@
 require 'sqlite3'
 require 'singleton'
 
-require_relative 'questions_super'
+require_relative 'model_base'
 
 class QuestionsDatabase < SQLite3::Database
   include Singleton
@@ -13,22 +13,12 @@ class QuestionsDatabase < SQLite3::Database
   end
 end
 
-class Question
+class Question < ModelBase
   attr_accessor :title, :body, :user_id
   attr_reader :id
 
-  def self.find_by_id(id)
-    questions = QuestionsDatabase.instance.execute(<<-SQL, id)
-      SELECT
-        *
-      FROM
-        questions
-      WHERE
-        id = ?
-    SQL
-    return nil unless questions.length > 0
-
-    Question.new(questions.first)
+  def self.table
+    'questions'
   end
 
   def self.find_by_author_id(author_id)
@@ -168,6 +158,10 @@ class Follow
     follows.map{|follow| Question.new(follow)}
   end
 
+  def self.table
+    'question_follows'
+  end
+
   def initialize(options)
     @id = options['id']
     @question_id = options['question_id']
@@ -204,6 +198,10 @@ class User
     return nil unless users.length > 0
 
     users.map {|user| User.new(user)}
+  end
+
+  def self.table
+    'users'
   end
 
   def initialize(options)
@@ -346,6 +344,10 @@ class Reply
     replies.map {|reply| Reply.new(reply)}
   end
 
+  def self.table
+    'replies'
+  end
+
   def initialize(options)
     @id = options['id']
     @question_id = options['question_id']
@@ -472,6 +474,10 @@ class Like
     return nil unless likes.length > 0
 
     likes.map{|like| Question.new(like)}
+  end
+
+  def self.table
+    'question_likes'
   end
 
   def initialize(options)
