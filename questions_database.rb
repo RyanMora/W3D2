@@ -95,19 +95,7 @@ end
 class Follow
   attr_accessor :question_id, :user_id
 
-  def self.find_by_id(id)
-    follows = QuestionsDatabase.instance.execute(<<-SQL, id)
-      SELECT
-        *
-      FROM
-        question_follows
-      WHERE
-        id = ?
-    SQL
-    return nil unless follows.length > 0
 
-    Follow.new(follows.first)
-  end
 
   def self.followers_for_question_id(question_id)
     follows = QuestionsDatabase.instance.execute(<<-SQL, question_id)
@@ -171,20 +159,6 @@ end
 
 class User
   attr_accessor :fname, :lname
-
-  def self.find_by_id(id)
-    users = QuestionsDatabase.instance.execute(<<-SQL, id)
-      SELECT
-        *
-      FROM
-        users
-      WHERE
-        id = ?
-    SQL
-    return nil unless users.length > 0
-
-    User.new(users.first)
-  end
 
   def self.find_by_name(fname, lname)
     users = QuestionsDatabase.instance.execute(<<-SQL, fname, lname)
@@ -288,20 +262,6 @@ end
 class Reply
   attr_accessor :question_id, :user_id, :parent_id, :body
 
-  def self.find_by_id(id)
-    replies = QuestionsDatabase.instance.execute(<<-SQL, id)
-      SELECT
-        *
-      FROM
-        replies
-      WHERE
-        id = ?
-    SQL
-    return nil unless replies.length > 0
-
-    Reply.new(replies.first)
-  end
-
   def self.find_by_user_id(user_id)
     replies = QuestionsDatabase.instance.execute(<<-SQL, user_id)
       SELECT
@@ -398,20 +358,6 @@ end
 
 class Like
   attr_accessor :question_id, :user_id
-
-  def self.find_by_id(id)
-    likes = QuestionsDatabase.instance.execute(<<-SQL, id)
-      SELECT
-        *
-      FROM
-        question_likes
-      WHERE
-        id = ?
-    SQL
-    return nil unless likes.length > 0
-
-    Like.new(likes.first)
-  end
 
   def self.likers_for_question_id(question_id)
     likes = QuestionsDatabase.instance.execute(<<-SQL, question_id)
