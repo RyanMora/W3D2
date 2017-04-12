@@ -1,6 +1,8 @@
 require 'sqlite3'
 require 'singleton'
 
+require_relative 'questions_super'
+
 class QuestionsDatabase < SQLite3::Database
   include Singleton
 
@@ -13,6 +15,7 @@ end
 
 class Question
   attr_accessor :title, :body, :user_id
+  attr_reader :id
 
   def self.find_by_id(id)
     questions = QuestionsDatabase.instance.execute(<<-SQL, id)
@@ -75,6 +78,27 @@ class Question
 
   def num_likes
     Like.num_likes_for_question_id(@id)
+  end
+
+  def save
+    if @id.nil?
+      QuestionsDatabase.instance.execute(<<-SQL, @title, @body, @user_id)
+        INSERT INTO
+          questions (title, body, user_id)
+        VALUES
+          (?, ?, ?)
+      SQL
+      @id = QuestionsDatabase.instance.last_insert_row_id
+    else
+      QuestionsDatabase.instance.execute(<<-SQL, @title, @body, @user_id, @id)
+        UPDATE
+          questions
+        SET
+          title = ?, body = ?, user_id = ?
+        WHERE
+          id = ?
+      SQL
+    end
   end
 end
 
@@ -219,6 +243,48 @@ class User
     users.first['avg']
   end
 
+  def save
+    if @id.nil?
+      QuestionsDatabase.instance.execute(<<-SQL, @fname, @lname)
+        INSERT INTO
+          users (fname, lname)
+        VALUES
+          (?, ?)
+      SQL
+      @id = QuestionsDatabase.instance.last_insert_row_id
+    else
+      QuestionsDatabase.instance.execute(<<-SQL, @fname, @lname, @id)
+        UPDATE
+          users
+        SET
+          fname = ?, lname = ?
+        WHERE
+          id = ?
+      SQL
+    end
+  end
+
+  def like(question)
+    liked = QuestionsDatabase.instance.execute(<<-SQL, @id, question.id)
+      SELECT
+        *
+      FROM
+        question_likes
+      WHERE
+        user_id = ? AND question_id = ?
+    SQL
+    if liked.empty?
+      QuestionsDatabase.instance.execute(<<-SQL, @id, question.id)
+        INSERT INTO
+          question_likes (user_id, question_id)
+        VALUES
+          (?, ?)
+      SQL
+    else
+      raise "YOU'VE ALREADY LIKED THAT!"
+    end
+  end
+
 end
 
 class Reply
@@ -304,6 +370,28 @@ class Reply
   def child_replies
     Reply.find_by_parent_id(@id)
   end
+
+  def save
+    if @id.nil?
+      QuestionsDatabase.instance.execute(<<-SQL, @question_id, @user_id, @parent_id, @body)
+        INSERT INTO
+          replies (question_id, user_id, parent_id, body)
+        VALUES
+          (?, ?, ?, ?)
+      SQL
+      @id = QuestionsDatabase.instance.last_insert_row_id
+    else
+      QuestionsDatabase.instance.execute(<<-SQL, @question_id, @user_id, @parent_id, @body, @id)
+        UPDATE
+          replies
+        SET
+          question_id = ?, user_id = ?, parent_id = ?, body = ?
+        WHERE
+          id = ?
+      SQL
+    end
+  end
+
 end
 
 class Like
